@@ -18,7 +18,7 @@ func main() {
 	tlsProviderFunc := api.VaultPluginTLSProvider(tlsConfig)
 
 	err := plugin.Serve(&plugin.ServeOpts{
-		BackendFactoryFunc: enigma_backend.Factory,
+		BackendFactoryFunc: benigma.Factory,
 		TLSProviderFunc:    tlsProviderFunc,
 	})
 	if err != nil {

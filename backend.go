@@ -1,4 +1,4 @@
-package enigma_backend
+package benigma
 
 import (
 	"context"
