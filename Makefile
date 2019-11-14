@@ -15,7 +15,7 @@ endif
 all: fmt build start
 
 build:
-	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/enigma-backend -gcflags="all=-N -l" cmd/enigma-backend/main.go
+	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/benigma -gcflags="all=-N -l" cmd/benigma/main.go
 
 start:
 	vault server -dev -dev-root-token-id=root -dev-plugin-dir=$$(pwd -P)/vault/plugins
