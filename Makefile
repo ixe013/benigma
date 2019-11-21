@@ -21,10 +21,10 @@ start:
 	vault server -dev -dev-root-token-id=root -dev-plugin-dir=$$(pwd -P)/vault/plugins
 
 enable:
-	vault secrets enable mock
+	vault secrets enable benigma
 
 clean:
-	rm -f ./vault/plugins/mock
+	rm -f ./vault/plugins/benigma
 
 fmt:
 	go fmt $$(go list ./...)
