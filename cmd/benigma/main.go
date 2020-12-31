@@ -4,12 +4,16 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-hclog"
-	benigma "github.com/vaups/benigma"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/plugin"
+	benigma "github.com/vaups/benigma"
 )
 
 func main() {
+	logger := hclog.New(&hclog.LoggerOptions{})
+
+	logger.Info("Enigma secret backend starting")
+
 	apiClientMeta := &api.PluginAPIClientMeta{}
 	flags := apiClientMeta.FlagSet()
 	flags.Parse(os.Args[1:])
@@ -21,10 +25,11 @@ func main() {
 		BackendFactoryFunc: benigma.Factory,
 		TLSProviderFunc:    tlsProviderFunc,
 	})
-	if err != nil {
-		logger := hclog.New(&hclog.LoggerOptions{})
 
-		logger.Error("Enigma plugin shutting down", "error", err)
+	if err != nil {
+		logger.Error("Enigma secret backent shutting down", "error", err)
 		os.Exit(1)
 	}
+
+	os.Exit(0)
 }

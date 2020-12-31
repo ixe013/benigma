@@ -12,21 +12,25 @@ endif
 
 .DEFAULT_GOAL := all
 
-all: fmt build start
+
+debug: GOBUILDFLAGS = -gcflags "all=-N -l"
+debug: build
+
+all: fmt debug dev
 
 build:
-	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/benigma -gcflags="all=-N -l" cmd/benigma/main.go
+	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/benigma $(GOBUILDFLAGS) cmd/benigma/main.go
 
-start:
-	vault server -dev -dev-root-token-id=root -dev-plugin-dir=$$(pwd -P)/vault/plugins
+dev:
+	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/vault/plugins
 
 enable:
 	vault secrets enable benigma
 
 clean:
-	rm -f ./vault/plugins/benigma
+	rm -vf ./vault/plugins/benigma
 
 fmt:
 	go fmt $$(go list ./...)
 
-.PHONY: build clean fmt start enable
+.PHONY: build clean fmt dev enable
