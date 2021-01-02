@@ -12,6 +12,8 @@ endif
 
 .DEFAULT_GOAL := all
 
+OUTPUTFOLDER = ./vault/plugins
+PLUGINNAME = benigma
 
 debug: GOBUILDFLAGS = -gcflags "all=-N -l"
 debug: build
@@ -19,16 +21,22 @@ debug: build
 all: fmt debug dev
 
 build:
-	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/benigma $(GOBUILDFLAGS) cmd/benigma/main.go
+	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o $(OUTPUTFOLDER)/$(PLUGINNAME) $(GOBUILDFLAGS) cmd/$(PLUGINNAME)/main.go
+	sha256sum $(OUTPUTFOLDER)/$(PLUGINNAME)
 
 dev:
-	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/vault/plugins
+	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/$(OUTPUTFOLDER)
+
+register:
+	vault secrets disable $(PLUGINNAME)
+	vault plugin deregister $(PLUGINNAME)
+	vault plugin register --sha256=$$(sha256sum $(OUTPUTFOLDER)/$(PLUGINNAME)|cut -f1 -d " ") $(PLUGINNAME)
 
 enable:
-	vault secrets enable benigma
+	vault secrets enable $(PLUGINNAME)
 
 clean:
-	rm -vf ./vault/plugins/benigma
+	rm -vf ./vault/plugins/$(PLUGINNAME)
 
 fmt:
 	go fmt $$(go list ./...)
