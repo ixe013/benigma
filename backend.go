@@ -31,12 +31,8 @@ func Backend(ctx context.Context, conf *logical.BackendConfig) (*backend, error)
 	var b backend
 	b.Backend = &framework.Backend{
 		Paths: []*framework.Path{
-			// b.pathCreateEnigmaModelInstance(),
-			// b.pathProcess(),
-			// b.pathReset(),
-			// b.pathKeys(),
-			b.pathModel(),
-			b.pathListModels(),
+			b.getPathForModel(),
+			b.getPathForSpecificModelOperations(),
 		},
 
 		BackendType: logical.TypeLogical,
