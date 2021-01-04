@@ -31,6 +31,8 @@ register:
 	vault secrets disable $(PLUGINNAME)
 	vault plugin deregister $(PLUGINNAME)
 	vault plugin register --sha256=$$(sha256sum $(OUTPUTFOLDER)/$(PLUGINNAME)|cut -f1 -d " ") $(PLUGINNAME)
+	vault secrets enable $(PLUGINNAME)
+	vault path-help $(PLUGINNAME)
 
 enable:
 	vault secrets enable $(PLUGINNAME)

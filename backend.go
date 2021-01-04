@@ -2,19 +2,14 @@ package benigma
 
 import (
 	"context"
-	//"encoding/json"
-	//"fmt"
-	//"strings"
 
-	//"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
-	//"github.com/hashicorp/vault/sdk/helper/jsonutil"
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
 // Factory configures and returns Enigma backends
 func Factory(contex context.Context, configuration *logical.BackendConfig) (logical.Backend, error) {
-	backend, err := Backend(contex, configuration)
+	backend, err := newEnigmaBackend(contex, configuration)
 
 	if err != nil {
 		return nil, err
@@ -27,21 +22,26 @@ func Factory(contex context.Context, configuration *logical.BackendConfig) (logi
 	return backend, nil
 }
 
-func Backend(ctx context.Context, conf *logical.BackendConfig) (*backend, error) {
-	var b backend
+func newEnigmaBackend(ctx context.Context, conf *logical.BackendConfig) (*enigmaBackend, error) {
+	var b enigmaBackend
 	b.Backend = &framework.Backend{
+		Help: `An Enigma machine implemented as a Vault Secret Engine.`,
 		Paths: []*framework.Path{
+
 			b.getPathForModel(),
 			b.getPathForSpecificModelOperations(),
+
+			b.getPathForInstances(),
+			b.getPathForInstanceCreation(),
+			b.getPathForInstanceOperations(),
 		},
 
 		BackendType: logical.TypeLogical,
 	}
 
-	// determine cacheSize to use. Defaults to 0 which means unlimited
 	return &b, nil
 }
 
-type backend struct {
+type enigmaBackend struct {
 	*framework.Backend
 }
