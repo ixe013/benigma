@@ -4,39 +4,52 @@ import (
 	"github.com/emedvedev/enigma"
 )
 
-var builtinModels = map[string]enigma.Enigma{
-	"I": enigma.Enigma{
-		Reflector: *enigma.NewReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT", "B"),
-		Rotors: []*enigma.Rotor{
-			enigma.NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", "III", "V"),
-			enigma.NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
-			enigma.NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
-		},
-	},
-	"M3": enigma.Enigma{
-		Reflector: *enigma.NewReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT", "B"),
-		Rotors: []*enigma.Rotor{
-			enigma.NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", "III", "V"),
-			enigma.NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
-			enigma.NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
-		},
-	},
-	"M4": enigma.Enigma{
-		Reflector: *enigma.NewReflector("ENKQAUYWJICOPBLMDXZVFTHRGS", "B-thin"),
-		Rotors: []*enigma.Rotor{
-			enigma.NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", "III", "V"),
-			enigma.NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
-			enigma.NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
-		},
-	},
-	"IXE013": enigma.Enigma{
-		Reflector: *enigma.NewReflector("YIZMPKRSHAVCWTBODUQNGJLXFE", "A"),
-		Rotors: []*enigma.Rotor{
-			enigma.NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
-			enigma.NewRotor("LEYJVCNIXWPBQMDRTAKZGFUHOS", "Beta", ""),
-			enigma.NewRotor("NZJHGRCXMYSWBOUFAIVLPEKQDT", "VII", "ZM"),
-		},
-	},
+/*
+Enigma configuration:
+  Rotors: [III II I]
+  Rotor positions: [A A A]
+  Rings: [1 1 1]
+  Plugboard: empty
+  Reflector: B
+*/
+
+var builtinModels = map[string]*enigma.Enigma{
+	"I": enigma.NewEnigma(
+		bundleRotors( //Rotors
+            []string{ "III", "II", "I" },
+            []int   {   1  ,   1 ,  1  },
+            []string{  "A" ,  "A", "A" },
+        ),
+        "B",         //Reflector
+        []string{},  //Plugboard
+	),
+	"M3": enigma.NewEnigma(
+		bundleRotors( //Rotors
+            []string{ "III", "II", "I" },
+            []int   {   1  ,   1 ,  1  },
+            []string{  "A" ,  "A", "A" },
+        ),
+        "B",         //Reflector
+        []string{},  //Plugboard
+	),
+	"M4": enigma.NewEnigma(
+		bundleRotors( //Rotors
+            []string{ "Beta", "III", "II", "I" },
+            []int   {   1  ,    1 ,    1,   1  },
+            []string{  "A" ,   "A",  "A",  "A" },
+        ),
+        "B-thin",    //Reflector
+        []string{},  //Plugboard
+	),
+	"IXE013": enigma.NewEnigma(
+		bundleRotors( //rotors
+            []string{ "II", "Beta", "VII" },
+            []int   {  1  ,    2  ,    3  },
+            []string{ "C" ,   "L" ,   "E" },
+        ),
+        "B",         //Reflector
+        []string{"AB","CD","EF","GH","IJ","KL","MN","OP","QR","ST","UV","WX","YZ"},  //Plugboard
+	),
 }
 
 func builtinModelNames() (names []string) {
@@ -45,3 +58,4 @@ func builtinModelNames() (names []string) {
 	}
 	return names
 }
+

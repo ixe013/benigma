@@ -34,6 +34,10 @@ func (b *enigmaBackend) getPathForInstanceOperations() *framework.Path {
                 Type:        framework.TypeString,
                 Description: "The id of the Enigma model instance you are creating. Must be unique. Think of it as a machine's serial number.",
             },
+            "keyboard": {
+                Type:        framework.TypeString,
+                Description: "The text that is typed on the Enigma machine's keyboard.",
+            },
         },
 
         Operations: map[logical.Operation]framework.OperationHandler{
@@ -42,8 +46,8 @@ func (b *enigmaBackend) getPathForInstanceOperations() *framework.Path {
                 Summary:  "Returns the state of an Enigma machine instances",
             },
             logical.UpdateOperation: &framework.PathOperation{
-                Callback: b.listInstances,
-                Summary:  "List the available Enigma machine instances",
+                Callback: b.encodeText,
+                Summary:  "Encodes (encrypts or decrypts) text with this Enigma machine instances",
             },
         },
 
@@ -85,10 +89,6 @@ receiver of an encrypted message will each have an instance of the same model.`,
     }
 }
 
-func remove(s []string, i int) []string {
-    s[i] = s[0]
-    return s[1:]
-}
 
 func (b *enigmaBackend) listInstances(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
     entries, err := req.Storage.List(ctx, "instances/")
@@ -121,6 +121,21 @@ func deserializeEnigmaInstance(raw []byte) (*enigma.Enigma, error) {
     return &machine, err
 }
 
+func getStatefulInstanceFromStorage(id string, ctx context.Context, req *logical.Request) (*statefulInstanceEntry, error) {
+    jsonEntry, err := req.Storage.Get(ctx, "instances/"+id)
+
+    if err != nil {
+        return nil, err
+    }
+
+    var instance statefulInstanceEntry
+
+    err = jsonEntry.DecodeJSON(&instance)
+
+    return &instance, err
+}
+
+
 func (b *enigmaBackend) createInstance(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
     model := data.Get("model").(string)
     id := data.Get("id").(string)
@@ -130,7 +145,7 @@ func (b *enigmaBackend) createInstance(ctx context.Context, req *logical.Request
         return logical.ErrorResponse("Cannot only create instances of builtin models (for now)"), logical.ErrInvalidRequest
     }
 
-    state, err := serializeEnigmaInstance(&original)
+    state, err := serializeEnigmaInstance(original)
 
     if err != nil {
         //Should really be an error 500 here, it is not the client's fault
@@ -143,6 +158,7 @@ func (b *enigmaBackend) createInstance(ctx context.Context, req *logical.Request
             Id:    id,
         },
         State: state,
+        Steps: 0,
     }
 
     // Convert the model to JSON to store it
@@ -168,18 +184,11 @@ func (b *enigmaBackend) createInstance(ctx context.Context, req *logical.Request
     return nil, nil
 }
 
+
 func (b *enigmaBackend) readInstance(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
     id := data.Get("id").(string)
 
-    jsonEntry, err := req.Storage.Get(ctx, "instances/"+id)
-
-    if err != nil {
-        return logical.ErrorResponse("Unable to read instance "+id), logical.ErrInvalidRequest
-    }
-
-    var instance statefulInstanceEntry
-
-    jsonEntry.DecodeJSON(&instance)
+    instance, err := getStatefulInstanceFromStorage(id, ctx, req)
 
     if err != nil {
         return logical.ErrorResponse("Unable to deserialize instance "+id), logical.ErrInvalidRequest
@@ -190,6 +199,48 @@ func (b *enigmaBackend) readInstance(ctx context.Context, req *logical.Request, 
             "model": instance.Model,
             "id":    instance.Id,
             "steps": instance.Steps,
+        },
+    }, nil
+}
+
+
+func (b *enigmaBackend) encodeText(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
+    id := data.Get("id").(string)
+
+    instance, err := getStatefulInstanceFromStorage(id, ctx, req)
+
+    if err != nil {
+        return logical.ErrorResponse("Unable to deserialize instance "+id+" state"), logical.ErrInvalidRequest
+    }
+
+    enigma, err := deserializeEnigmaInstance(instance.State)
+
+    if err != nil {
+        return logical.ErrorResponse("Instance "+id+" has inconsistent state"), logical.ErrInvalidRequest
+    }
+
+    keyboard := data.Get("keyboard").(string)
+
+    lights := enigma.EncodeString(keyboard)
+
+    state, err := serializeEnigmaInstance(enigma)
+
+    instance.Steps = instance.Steps + len(keyboard)
+    instance.State = state
+
+    // Convert the model to JSON to store it
+    jsonEntry, err := logical.StorageEntryJSON("instances/"+id, instance)
+    if err != nil {
+        return nil, err
+    }
+
+    if err := req.Storage.Put(ctx, jsonEntry); err != nil {
+        return nil, err
+    }
+
+    return &logical.Response{
+        Data: map[string]interface{}{
+            "lights": lights,
         },
     }, nil
 }
