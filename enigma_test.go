@@ -2,6 +2,8 @@ package benigma
 
 import (
 	"testing"
+
+	"github.com/emedvedev/enigma"
 )
 
 func TestEncode(t *testing.T) {
@@ -26,5 +28,23 @@ func TestEncode(t *testing.T) {
             t.Errorf("Run %d: Expected %s but got %s", i, test_case.Keyboard, encoded)
         }
     }
+}
 
+func TestSanitize(t *testing.T) {
+    type sanitizeTest struct {
+        Raw string
+        Sanitized string
+    }
+
+    tests := []sanitizeTest{
+        { "Hello World", "HELLOXWORLD" },
+        { "guillaume@paralint.com", "GUILLAUMEPARALINTCOM" },
+    }
+
+    for i, test_case := range tests {
+        sanitized := enigma.SanitizePlaintext(test_case.Raw)
+        if test_case.Sanitized != sanitized {
+            t.Errorf("Run %d: Sanitization of %s should yield %s but got %s", i, test_case.Raw, test_case.Sanitized, sanitized)
+        }
+    }
 }

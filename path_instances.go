@@ -4,6 +4,7 @@ import (
     "bytes"
     "context"
     "encoding/gob"
+    "strings"
 
     "github.com/emedvedev/enigma"
     "github.com/hashicorp/vault/sdk/framework"
@@ -213,7 +214,7 @@ func (b *enigmaBackend) encodeText(ctx context.Context, req *logical.Request, da
         return logical.ErrorResponse("Unable to deserialize instance "+id+" state"), logical.ErrInvalidRequest
     }
 
-    enigma, err := deserializeEnigmaInstance(instance.State)
+    machine, err := deserializeEnigmaInstance(instance.State)
 
     if err != nil {
         return logical.ErrorResponse("Instance "+id+" has inconsistent state"), logical.ErrInvalidRequest
@@ -221,9 +222,20 @@ func (b *enigmaBackend) encodeText(ctx context.Context, req *logical.Request, da
 
     keyboard := data.Get("keyboard").(string)
 
-    lights := enigma.EncodeString(keyboard)
+    uppercase := strings.ToUpper(keyboard)
 
-    state, err := serializeEnigmaInstance(enigma)
+    sanitized := enigma.SanitizePlaintext(uppercase)
+
+    var warning []string
+
+    if uppercase != sanitized {
+        warning = make([]string, 1)
+        warning[0] = "Unsupported non-alphabetic characters removed from string"
+    }
+
+    lights := machine.EncodeString(sanitized)
+
+    state, err := serializeEnigmaInstance(machine)
 
     instance.Steps = instance.Steps + len(keyboard)
     instance.State = state
@@ -242,6 +254,7 @@ func (b *enigmaBackend) encodeText(ctx context.Context, req *logical.Request, da
         Data: map[string]interface{}{
             "lights": lights,
         },
+        Warnings: warning,
     }, nil
 }
 
