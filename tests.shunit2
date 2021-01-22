@@ -1,0 +1,110 @@
+#!/bin/bash
+
+: ${VAULT_TEST_PORT:=18200}
+: ${PLUGIN_FOLDER:=./vault/plugins}
+: ${VAULT_TEST_ROOT_TOKEN:=root}
+: ${PLUGIN_NAME:=benigma}
+: ${SHUNIT_COLOR:=always}
+
+export VAULT_ADDR=http://localhost:$VAULT_TEST_PORT
+export VAULT_TOKEN=$VAULT_TEST_ROOT_TOKEN
+
+
+oneTimeSetUp() {
+    echo starting Vault
+    vault server --dev \
+        --dev-root-token-id $VAULT_TEST_ROOT_TOKEN \
+        --dev-no-store-token \
+        --log-level trace \
+        --dev-listen-address=localhost:$VAULT_TEST_PORT \
+        --dev-plugin-dir=$(pwd -P)/${PLUGIN_FOLDER} > tests.log 2>&1 & echo $! > ./test-pidfile
+
+    until curl --fail --silent --max-time 5 $VAULT_ADDR/v1/sys/health?standbycode=200\&sealedcode=200\&uninitcode=200\&drsecondarycode=200 --header "X-Vault-No-Request-Forwardilg: 1" -o /dev/null; do echo -n ; sleep 1; done
+
+    vault secrets enable $PLUGIN_NAME > /dev/null
+}
+
+
+oneTimeTearDown() {
+    echo stopping Vault
+    PID=$(cat ./test-pidfile)
+    kill $PID
+    tail --pid=$PID -f /dev/null
+}
+
+
+testPluginMetadata() {
+    assertNotNull "Path help empty" "$(vault path-help $PLUGIN_NAME)"
+}
+
+
+testBuiltInModels() {
+    MODELS=$(vault list --format json $PLUGIN_NAME/models | jq -c 'sort')
+
+    assertEquals "Default model I missing"      I      "$(echo $MODELS | jq -r '.[0] ')"
+    assertEquals "Default model IXE013 missing" IXE013 "$(echo $MODELS | jq -r '.[1] ')"
+    assertEquals "Default model M3 missing"     M3     "$(echo $MODELS | jq -r '.[2] ')"
+    assertEquals "Default model M4 missing"     M4     "$(echo $MODELS | jq -r '.[3] ')"
+
+    assertFalse "Should not be possible to delete built-in model" \
+        'vault delete $PLUGIN_NAME/models/IXE013'
+}
+
+testCustomModels() {
+    assertTrue "Should be able to create model" \
+        'vault write --format json $PLUGIN_NAME/models name=TEST_MODEL > /dev/null 2>&1'
+
+    assertEquals "New TEST_MODEL should be present" TEST_MODEL \
+        "$(vault list --format json $PLUGIN_NAME/models | jq -r 'sort | .[4] ')"
+
+    assertTrue "Should be possible to create instance of a custom model" \
+        'vault write $PLUGIN_NAME/models/M3/instance id=test'
+
+    assertEquals "Instance 'test' missing" test \
+        "$(vault list --format json $PLUGIN_NAME/instances | jq -r '.[0] ')"
+
+    assertEquals "New instances have 0 steps" 0 \
+        "$(vault read --format json $PLUGIN_NAME/instances/test | jq -r .data.steps)"
+
+    assertTrue "Should be possible to delete custom model" \
+        'vault delete $PLUGIN_NAME/models/TEST_MODEL'
+}
+
+testEncryption() {
+    #Tests this converstaion between a boat and a submarine (translated in German)
+    # Boat: Hello World
+    # Submarine: Is this a test
+    # Boat : Yes!
+
+    #Create two instances of the same model
+    vault write $PLUGIN_NAME/models/M4/instance id=boat > /dev/null
+    vault write $PLUGIN_NAME/models/M4/instance id=submarine > /dev/null
+
+    assertEquals "Message HALLO WELT was not encrypted properly" MTNCZBHOM \
+        "$(vault write --field lights $PLUGIN_NAME/instances/boat keyboard=HALLOWELT)"
+
+    assertEquals "Message MTNCZBHOM was not dencrypted properly" HALLOWELT \
+        "$(vault write --field lights $PLUGIN_NAME/instances/submarine keyboard=MTNCZBHOM)"
+
+    assertEquals "Message IST DAS EIN TEST was not encrypted properly" ZUDFANRFSCDCMXBE \
+        "$(vault write --field lights $PLUGIN_NAME/instances/submarine keyboard="IST DAS EIN TEST")"
+
+    #Spaces are replaced by X
+    assertEquals "Message ZUDFANRFSCDCMXBE was not dencrypted properly" ISTXDASXEINXTEST \
+        "$(vault write --field lights $PLUGIN_NAME/instances/boat keyboard=ZUDFANRFSCDCMXBE)"
+
+    assertNotNull "Warning must be given for skipped characters" \
+        "$(vault write --format json $PLUGIN_NAME/instances/boat keyboard='JAWOHL!' | jq -r .warnings[0])"
+
+}
+
+
+if [ -z ${SHUNIT_VERSION+x} ]
+then
+echo
+echo "To run the test in this file, install shUnit2 (https://github.com/kward/shunit2)"
+echo "and type this command:"
+echo
+echo "   shunit2 $BASH_SOURCE"
+echo
+fi
