@@ -18,7 +18,7 @@ PLUGINNAME = benigma
 debug: GOBUILDFLAGS = -gcflags "all=-N -l"
 debug: build
 
-all: fmt debug dev
+all: fmt debug test
 
 build:
 	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o $(OUTPUTFOLDER)/$(PLUGINNAME) $(GOBUILDFLAGS) cmd/$(PLUGINNAME)/main.go
@@ -27,6 +27,8 @@ build:
 dev:
 	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/$(OUTPUTFOLDER)
 
+test:
+	find . -type f -name "*.shunit2" -exec shunit2 {} \;
 register:
 	vault secrets disable $(PLUGINNAME)
 	vault plugin deregister $(PLUGINNAME)
