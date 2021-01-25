@@ -63,7 +63,8 @@ func (b *enigmaBackend) getPathForSpecificModelOperations() *framework.Path {
 func (b *enigmaBackend) listModels(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
 	entries, err := req.Storage.List(ctx, "models/")
 	if err != nil {
-		return nil, err
+		b.Logger().Error("An error occured trying to list the models")
+		return logical.ErrorResponse("Internal error, unable to list the current models"), err
 	}
 
 	return logical.ListResponse(append(builtinModelNames(), entries...)), nil
@@ -79,10 +80,12 @@ func (b *enigmaBackend) createModel(ctx context.Context, req *logical.Request, d
 	// Convert the model to JSON to store it
 	jsonEntry, err := logical.StorageEntryJSON("models/"+name, model)
 	if err != nil {
-		return nil, err
+		b.Logger().Error("An error occured trying to create the model")
+		return logical.ErrorResponse("An error occured trying to create the model"), err
 	}
 	if err := req.Storage.Put(ctx, jsonEntry); err != nil {
-		return nil, err
+		b.Logger().Error("An error occured trying to save the model")
+		return logical.ErrorResponse("An error occured trying to save the model"), err
 	}
 
 	return nil, nil
@@ -100,7 +103,8 @@ func (b *enigmaBackend) deleteModel(ctx context.Context, req *logical.Request, d
 	}
 
 	if err := req.Storage.Delete(ctx, "models/"+name); err != nil {
-		return nil, err
+		b.Logger().Error("An error occured trying to delete the model")
+		return logical.ErrorResponse("An error occured trying to delete the model"), err
 	}
 
 	return nil, nil
