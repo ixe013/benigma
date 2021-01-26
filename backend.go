@@ -7,6 +7,10 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+
+var Version = "0.0.0"
+var Commit = "abc1234"
+
 // Factory configures and returns Enigma backends
 func Factory(contex context.Context, configuration *logical.BackendConfig) (logical.Backend, error) {
 	backend, err := newEnigmaBackend(contex, configuration)

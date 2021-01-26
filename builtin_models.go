@@ -4,15 +4,6 @@ import (
 	"github.com/emedvedev/enigma"
 )
 
-/*
-Enigma configuration:
-  Rotors: [III II I]
-  Rotor positions: [A A A]
-  Rings: [1 1 1]
-  Plugboard: empty
-  Reflector: B
-*/
-
 var builtinModels = map[string]*enigma.Enigma{
 	"I": enigma.NewEnigma(
 		bundleRotors( //Rotors
