@@ -15,8 +15,9 @@ endif
 OUTPUTFOLDER = ./vault/plugins
 PROJECTNAME = benigma
 PLUGINNAME = enigma
+VERSION=$(shell git describe --abbrev=0 --dirty=+)
 COMMIT=$(shell git rev-parse --short HEAD)
-OUTPUTNAME = $(PLUGINNAME).$(COMMIT)
+OUTPUTNAME = $(PLUGINNAME).$(VERSION)
 
 debug: GOBUILDFLAGS = -gcflags "all=-N -l"
 debug: build
@@ -26,7 +27,7 @@ all: debug register test
 upgrade: register reload
 
 build:
-	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o "$(OUTPUTFOLDER)/$(OUTPUTNAME)" $(GOBUILDFLAGS) -ldflags="-X 'github.com/vaups/benigma.Version=$$(git describe --abbrev=0 --dirty=+)' -X 'github.com/vaups/benigma.Commit=$(COMMIT)'" cmd/$(PROJECTNAME)/main.go
+	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o "$(OUTPUTFOLDER)/$(OUTPUTNAME)" $(GOBUILDFLAGS) -ldflags="-X 'github.com/vaups/benigma.Version=$(VERSION)' -X 'github.com/vaups/benigma.Commit=$(COMMIT)'" cmd/$(PROJECTNAME)/main.go
 	sha256sum $(OUTPUTFOLDER)/$(OUTPUTNAME)
 
 dev:

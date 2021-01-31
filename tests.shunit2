@@ -4,7 +4,7 @@
 : ${PLUGIN_FOLDER:=./vault/plugins}
 : ${VAULT_TEST_ROOT_TOKEN:=root}
 : ${PLUGIN_NAME:=enigma}
-: ${EXECUTABLE_NAME:=enigma.$(git rev-parse --short HEAD)}
+: ${EXECUTABLE_NAME:=enigma.$(git describe --abbrev=0 --dirty=+)}
 : ${SHUNIT_COLOR:=always}
 
 export VAULT_ADDR=http://localhost:$VAULT_TEST_PORT
@@ -102,13 +102,5 @@ testEncryption() {
 
 }
 
+. shunit2
 
-if [ -z ${SHUNIT_VERSION+x} ]
-then
-echo
-echo "To run the test in this file, install shUnit2 (https://github.com/kward/shunit2)"
-echo "and type this command:"
-echo
-echo "   shunit2 $BASH_SOURCE"
-echo
-fi
