@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/hashicorp/go-hclog"
@@ -10,25 +11,30 @@ import (
 )
 
 func main() {
-	logger := hclog.New(&hclog.LoggerOptions{})
+	if (len(os.Args) >= 2) && (os.Args[1] == "version") {
+		fmt.Println(benigma.Version)
+	} else {
+		logger := hclog.New(&hclog.LoggerOptions{})
 
-	logger.Info("Enigma secret backend starting")
+		logger.Info("Enigma secret engine starting", "version", benigma.Version, "commit", benigma.Commit)
 
-	apiClientMeta := &api.PluginAPIClientMeta{}
-	flags := apiClientMeta.FlagSet()
-	flags.Parse(os.Args[1:])
+		apiClientMeta := &api.PluginAPIClientMeta{}
+		flags := apiClientMeta.FlagSet()
+		flags.Parse(os.Args[1:])
 
-	tlsConfig := apiClientMeta.GetTLSConfig()
-	tlsProviderFunc := api.VaultPluginTLSProvider(tlsConfig)
+		tlsConfig := apiClientMeta.GetTLSConfig()
+		tlsProviderFunc := api.VaultPluginTLSProvider(tlsConfig)
 
-	err := plugin.Serve(&plugin.ServeOpts{
-		BackendFactoryFunc: benigma.Factory,
-		TLSProviderFunc:    tlsProviderFunc,
-	})
+		err := plugin.Serve(&plugin.ServeOpts{
+			BackendFactoryFunc: benigma.Factory,
+			TLSProviderFunc:    tlsProviderFunc,
+		})
 
-	if err != nil {
-		logger.Error("Enigma secret backent shutting down", "error", err)
-		os.Exit(1)
+		logger.Error("Enigma secret engine shutting down", "error", err)
+
+		if err != nil {
+			os.Exit(1)
+		}
 	}
 
 	os.Exit(0)
