@@ -1,6 +1,7 @@
 package main
 
 import (
+    "flag"
 	"fmt"
     "io"
 	"os"
@@ -31,45 +32,51 @@ func computeSha256OfFile(exe string) (string, error) {
 }
 
 func main() {
-    logger := hclog.New(&hclog.LoggerOptions{})
+    flag.Parse()
 
-	if (len(os.Args) >= 2) && (os.Args[1] == "version") {
+    for _, fl := range flag.Args() {
         exe, _ := os.Executable()
         hash, _ := computeSha256OfFile(exe)
 
-		version := map[string]string{
-			"version": benigma.Version,
-			"commit":  benigma.Commit,
-            "sha256":  hash,
-		}
+        if (fl == "version") {
+            version := map[string]string{
+                "version": benigma.Version,
+                "commit":  benigma.Commit,
+                "sha256":  hash,
+            }
+            bytes, err := json.Marshal(version)
 
-		bytes, err := json.Marshal(version)
+            if err == nil {
+                fmt.Println(string(bytes))
+            }
 
-		if err == nil {
-			fmt.Println(string(bytes))
-		}
+	        os.Exit(0)
 
-	} else {
+        } else if (fl == "hash") {
+            fmt.Println(hash)
+	        os.Exit(0)
+        }
+    }
 
-		logger.Info("Enigma secret engine starting", "version", benigma.Version, "commit", benigma.Commit)
+    logger := hclog.New(&hclog.LoggerOptions{})
+	logger.Info("Enigma secret engine starting", "version", benigma.Version, "commit", benigma.Commit)
 
-		apiClientMeta := &api.PluginAPIClientMeta{}
-		flags := apiClientMeta.FlagSet()
-		flags.Parse(os.Args[1:])
+	apiClientMeta := &api.PluginAPIClientMeta{}
+	flags := apiClientMeta.FlagSet()
+	flags.Parse(os.Args[1:])
 
-		tlsConfig := apiClientMeta.GetTLSConfig()
-		tlsProviderFunc := api.VaultPluginTLSProvider(tlsConfig)
+	tlsConfig := apiClientMeta.GetTLSConfig()
+	tlsProviderFunc := api.VaultPluginTLSProvider(tlsConfig)
 
-		err := plugin.Serve(&plugin.ServeOpts{
-			BackendFactoryFunc: benigma.Factory,
-			TLSProviderFunc:    tlsProviderFunc,
-		})
+	err := plugin.Serve(&plugin.ServeOpts{
+		BackendFactoryFunc: benigma.Factory,
+		TLSProviderFunc:    tlsProviderFunc,
+	})
 
-		logger.Error("Enigma secret engine shutting down", "error", err)
+	logger.Error("Enigma secret engine shutting down", "error", err)
 
-		if err != nil {
-			os.Exit(1)
-		}
+	if err != nil {
+		os.Exit(1)
 	}
 
 	os.Exit(0)
