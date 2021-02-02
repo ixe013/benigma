@@ -100,7 +100,7 @@ the cipher text. If you type the cipher text on the other machine, then the ligh
 Typical usage between a `boat` and a `submarine` can go like this:
 
 | # | Step | Vault command |
-+---+------+---------------+
+| - | ---- | ------------- |
 | 1 | Create the boat instances   | `vault write enigma/models/M4/instance id=boat` |
 | 2 | Create the submarine instances | `vault write enigma/models/M4/instance id=submarine` |
 | 3 | Type the plaintext on the boat's keyboard | `vault write enigma/instances/boat keyboard=HELLOWORLD` |
