@@ -45,11 +45,15 @@ func (b *enigmaBackend) getPathForInstanceOperations() *framework.Path {
 		Operations: map[logical.Operation]framework.OperationHandler{
 			logical.ReadOperation: &framework.PathOperation{
 				Callback: b.readInstance,
-				Summary:  "Returns the state of an Enigma machine instances",
+				Summary:  "Returns the state of an Enigma machine instance",
+			},
+			logical.DeleteOperation: &framework.PathOperation{
+				Callback: b.deleteInstance,
+				Summary:  "Deletes an instance of an Enigma machine instance",
 			},
 			logical.UpdateOperation: &framework.PathOperation{
 				Callback: b.encodeText,
-				Summary:  "Encodes (encrypts or decrypts) text with this Enigma machine instances",
+				Summary:  "Encodes (encrypts or decrypts) text with this Enigma machine instance",
 			},
 		},
 
@@ -213,6 +217,17 @@ func (b *enigmaBackend) readInstance(ctx context.Context, req *logical.Request, 
 			"steps": instance.Steps,
 		},
 	}, nil
+}
+
+func (b *enigmaBackend) deleteInstance(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
+	id := data.Get("id").(string)
+
+	if err := req.Storage.Delete(ctx, "instances/"+id); err != nil {
+		b.Logger().Error("An error occured trying to delete the instance")
+		return logical.ErrorResponse("An error occured trying to delete the instance"), err
+	}
+
+	return nil, nil
 }
 
 func (b *enigmaBackend) encodeText(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {

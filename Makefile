@@ -15,7 +15,7 @@ endif
 OUTPUTFOLDER = ./vault/plugins
 PROJECTNAME = benigma
 PLUGINNAME = enigma
-VERSION=$(shell git describe --abbrev=0 --dirty=+)
+VERSION=$(shell git describe --abbrev=0 --dirty=d)
 COMMIT=$(shell git rev-parse --short HEAD)
 OUTPUTNAME = $(PLUGINNAME).$(VERSION)
 
@@ -33,23 +33,26 @@ build:
 dev:
 	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/$(OUTPUTFOLDER)
 
-test:
-	find . -type f -name "*.shunit2" -exec shunit2 {} \;
+test: build
+	find . -type f -name "*.shunit2" -exec {} \;
 
 unregister:
 	vault secrets disable $(PLUGINNAME)
 	vault plugin deregister $(PLUGINNAME)
 
-register:
-	curl -i --request PUT $$VAULT_ADDR/v1/sys/plugins/catalog/secret/$(PLUGINNAME) --header "X-Vault-Token: $$(vault print token)" --data "{ \"type\":\"secret\", \"command\":\"$(OUTPUTNAME)\", \"sha256\":\"$$(sha256sum $(OUTPUTFOLDER)/$(OUTPUTNAME)|cut -f1 -d ' ')\" }"
+register: 
+	curl -i --request PUT $$VAULT_ADDR/v1/sys/plugins/catalog/secret/$(PLUGINNAME) --header "X-Vault-Token: $$(vault print token)" --data "{ \"type\":\"secret\", \"command\":\"$(OUTPUTNAME)\", \"sha256\":\"$$($(OUTPUTFOLDER)/$(OUTPUTNAME) hash)\" }"
 
 reload:
-	vault write sys/plugins/reload/backend plugin=$(PLUGINNAME) scope=global mounts=$(PLUGINNAME)
+	vault write sys/plugins/reload/backend plugin=$(PLUGINNAME) scope=global
 
 clean:
 	vault secrets disable $(PLUGINNAME) || true
 	vault plugin deregister $(PLUGINNAME) || true
 	rm -vf ./vault/plugins/*
+
+release: test
+	tar czfv enigma.tar.gz --directory=$(OUTPUTFOLDER) $$(ls -1 $(OUTPUTFOLDER) | sort -r | head -1)
 
 fmt:
 	go fmt $$(go list ./...)

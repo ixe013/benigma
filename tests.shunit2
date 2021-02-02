@@ -4,7 +4,7 @@
 : ${PLUGIN_FOLDER:=./vault/plugins}
 : ${VAULT_TEST_ROOT_TOKEN:=root}
 : ${PLUGIN_NAME:=enigma}
-: ${EXECUTABLE_NAME:=enigma.$(git describe --abbrev=0 --dirty=+)}
+: ${EXECUTABLE_NAME:=enigma.$(git describe --abbrev=0 --dirty=d)}
 : ${SHUNIT_COLOR:=always}
 
 export VAULT_ADDR=http://localhost:$VAULT_TEST_PORT
@@ -22,7 +22,7 @@ oneTimeSetUp() {
 
     until curl --fail --silent --max-time 5 $VAULT_ADDR/v1/sys/health?standbycode=200\&sealedcode=200\&uninitcode=200\&drsecondarycode=200 --header "X-Vault-No-Request-Forwardilg: 1" -o /dev/null; do echo -n ; sleep 1; done
 
-	curl --request PUT $VAULT_ADDR/v1/sys/plugins/catalog/secret/$PLUGIN_NAME --header "X-Vault-Token: $VAULT_TEST_ROOT_TOKEN" --data "{ \"type\":\"secret\", \"command\":\"$EXECUTABLE_NAME\", \"sha256\":\"$(sha256sum ${PLUGIN_FOLDER}/${EXECUTABLE_NAME}|cut -f1 -d ' ')\" }"
+	curl --request PUT $VAULT_ADDR/v1/sys/plugins/catalog/secret/$PLUGIN_NAME --header "X-Vault-Token: $VAULT_TEST_ROOT_TOKEN" --data "{ \"type\":\"secret\", \"command\":\"$EXECUTABLE_NAME\", \"sha256\":\"$($PLUGIN_FOLDER/$EXECUTABLE_NAME hash)\" }"
 
     vault secrets enable $PLUGIN_NAME > /dev/null
     false
@@ -100,6 +100,8 @@ testEncryption() {
     assertNotNull "Warning must be given for skipped characters" \
         "$(vault write --format json $PLUGIN_NAME/instances/boat keyboard='JAWOHL!' | jq -r .warnings[0])"
 
+    assertTrue "Should be possible to delete instance" \
+        "vault delete $PLUGIN_NAME/instances/boat"
 }
 
 . shunit2
