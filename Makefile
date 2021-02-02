@@ -26,8 +26,6 @@ all: debug register test
 
 upgrade: register reload
 
-test: build run_test
-
 build:
 	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o "$(OUTPUTFOLDER)/$(OUTPUTNAME)" $(GOBUILDFLAGS) -ldflags="-X 'github.com/vaups/benigma.Version=$(VERSION)' -X 'github.com/vaups/benigma.Commit=$(COMMIT)'" cmd/$(PROJECTNAME)/main.go
 	sha256sum $(OUTPUTFOLDER)/$(OUTPUTNAME)
@@ -35,14 +33,14 @@ build:
 dev:
 	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/$(OUTPUTFOLDER)
 
-run_test:
+test: build
 	find . -type f -name "*.shunit2" -exec {} \;
 
 unregister:
 	vault secrets disable $(PLUGINNAME)
 	vault plugin deregister $(PLUGINNAME)
 
-register:
+register: 
 	curl -i --request PUT $$VAULT_ADDR/v1/sys/plugins/catalog/secret/$(PLUGINNAME) --header "X-Vault-Token: $$(vault print token)" --data "{ \"type\":\"secret\", \"command\":\"$(OUTPUTNAME)\", \"sha256\":\"$$($(OUTPUTFOLDER)/$(OUTPUTNAME) hash)\" }"
 
 reload:
@@ -53,7 +51,7 @@ clean:
 	vault plugin deregister $(PLUGINNAME) || true
 	rm -vf ./vault/plugins/*
 
-package:
+release: test
 	tar czfv enigma.tar.gz --directory=$(OUTPUTFOLDER) $$(ls -1 $(OUTPUTFOLDER) | sort -r | head -1)
 
 fmt:
