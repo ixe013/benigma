@@ -34,7 +34,7 @@ dev:
 	vault server --dev --dev-root-token-id root --log-level trace --dev-plugin-dir=$$(pwd -P)/$(OUTPUTFOLDER)
 
 test: build
-	find . -type f -name "*.shunit2" -exec {} \;
+	find . -type f -name "*.shunit2" -exec bash {} \;
 
 unregister:
 	vault secrets disable $(PLUGINNAME)
