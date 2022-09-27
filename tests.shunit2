@@ -25,7 +25,6 @@ oneTimeSetUp() {
 	curl --request PUT $VAULT_ADDR/v1/sys/plugins/catalog/secret/$PLUGIN_NAME --header "X-Vault-Token: $VAULT_TEST_ROOT_TOKEN" --data "{ \"type\":\"secret\", \"command\":\"$EXECUTABLE_NAME\", \"sha256\":\"$($PLUGIN_FOLDER/$EXECUTABLE_NAME hash)\" }"
 
     vault secrets enable $PLUGIN_NAME > /dev/null
-    false
 }
 
 

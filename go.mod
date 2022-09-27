@@ -1,4 +1,4 @@
-module github.com/vaups/benigma
+module github.com/ixe013/benigma
 
 go 1.15
 

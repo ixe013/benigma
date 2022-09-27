@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/plugin"
-	benigma "github.com/vaups/benigma"
+	benigma "github.com/ixe013/benigma"
 )
 
 func computeSha256OfFile(exe string) (string, error) {
