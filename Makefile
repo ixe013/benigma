@@ -27,7 +27,7 @@ all: debug register test
 upgrade: register reload
 
 build:
-	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o "$(OUTPUTFOLDER)/$(OUTPUTNAME)" $(GOBUILDFLAGS) -ldflags="-X 'github.com/vaups/benigma.Version=$(VERSION)' -X 'github.com/vaups/benigma.Commit=$(COMMIT)'" cmd/$(PROJECTNAME)/main.go
+	GOOS=$(OS) GOARCH="$(GOARCH)" CGO_ENABLED=0 go build -a -installsuffix cgo -o "$(OUTPUTFOLDER)/$(OUTPUTNAME)" $(GOBUILDFLAGS) -ldflags="-X 'github.com/vaups/benigma.Version=$(VERSION)' -X 'github.com/vaups/benigma.Commit=$(COMMIT)'" cmd/$(PROJECTNAME)/main.go
 	sha256sum $(OUTPUTFOLDER)/$(OUTPUTNAME)
 
 dev:
